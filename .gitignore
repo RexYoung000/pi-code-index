@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.codeindex/
+.npm-cache/
+*.tsbuildinfo
