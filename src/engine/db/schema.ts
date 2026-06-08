@@ -61,11 +61,11 @@ function createSchema(db: Database): void {
       qualified_name TEXT
     );
 
-    -- 符号间关系
+    -- 符号间关系（去除外键约束以支持跨文件未解析引用）
     CREATE TABLE IF NOT EXISTS edges (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      from_id INTEGER NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-      to_id INTEGER NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+      from_id INTEGER NOT NULL,
+      to_id INTEGER NOT NULL,
       kind TEXT NOT NULL,
       file TEXT NOT NULL,
       line INTEGER NOT NULL
