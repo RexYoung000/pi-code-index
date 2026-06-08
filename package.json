@@ -1,6 +1,6 @@
 {
-  "name": "pi-code-index",
-  "version": "0.1.0",
+  "name": "@rex_young/pi-code-index",
+  "version": "0.4.0",
   "description": "AI 驱动的代码知识图谱 — 让 AI 编程助手更快、更准地理解和修改代码",
   "keywords": [
     "pi-package"
@@ -33,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/RexYoung000/pi-code-index.git"
+    "url": "git+https://github.com/RexYoung000/pi-code-index.git"
   },
   "files": [
     "src",
