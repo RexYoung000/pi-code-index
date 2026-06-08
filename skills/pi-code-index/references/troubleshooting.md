@@ -1,14 +1,30 @@
 # Troubleshooting
 
-## `tsx` not found
+## Stable CLI missing
 
-Run dependencies installation in the package root:
+For stable cross-agent usage, build the CLI once in the package root:
 
 ```bash
 npm install
+npm run build
 ```
 
-This MVP launcher runs TypeScript source through the local `tsx` dev dependency.
+The launcher prefers:
+
+```text
+dist/cli.mjs
+```
+
+If `dist/cli.mjs` is missing but local `tsx` exists, it falls back to TypeScript source for development and prints a warning.
+
+## `tsx` not found during fallback
+
+This only matters when `dist/cli.mjs` has not been built. Run:
+
+```bash
+npm install
+npm run build
+```
 
 ## Index missing
 

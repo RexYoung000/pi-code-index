@@ -1,9 +1,10 @@
 # Codex Usage
 
-Use this skill directory as a generic Agent Skill. Before relying on it, make sure dependencies are installed in the package root:
+Use this skill directory as a generic Agent Skill. Before relying on it, make sure dependencies are installed and the stable CLI is built in the package root:
 
 ```bash
 npm install
+npm run build
 ```
 
 Then run commands from the package root or adjust paths accordingly:

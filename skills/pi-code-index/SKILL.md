@@ -2,14 +2,14 @@
 name: pi-code-index
 description: Indexes and searches local codebases for agent workflows. Use when an agent needs to understand project structure, locate symbols, trace callers/callees, build implementation context, or analyze change impact before editing code.
 license: MIT
-compatibility: Requires Node.js 20+ and project dependencies installed with npm install.
+compatibility: Requires Node.js 20+. For stable usage, run npm install and npm run build in the package root once.
 ---
 
 # Pi Code Index
 
 Use this skill before broad code exploration or risky edits. It gives agents a local code knowledge graph stored in `.codeindex/codeindex.db`.
 
-This skill is intentionally cross-agent: Pi can load it as a package skill, while Codex, Claude Code, and other agents can run the scripts directly from this directory.
+This skill is intentionally cross-agent: Pi can load it as a package skill, while Codex, Claude Code, and other agents can run the scripts directly from this directory. The scripts call the stable built CLI at `dist/cli.mjs` when available, with a development fallback to TypeScript source.
 
 ## When to use
 

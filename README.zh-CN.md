@@ -49,10 +49,11 @@ skills/pi-code-index/
 
 Codex、Claude Code 或其他支持 Agent Skills 的工具，可以加载这个目录，并通过里面的脚本调用代码索引能力。
 
-先在本项目根目录安装依赖：
+先在本项目根目录安装依赖并构建稳定 CLI：
 
 ```bash
 npm install
+npm run build
 ```
 
 然后可以运行：
@@ -76,11 +77,13 @@ node skills/pi-code-index/scripts/analyze-impact.mjs /path/to/project 12
 
 ## CLI
 
-项目提供了一个快速 MVP 版 CLI：
+项目提供了稳定版 CLI 启动器：
 
 ```bash
 node bin/pi-code-index.js <action> <project> [args...] [options]
 ```
+
+启动器会优先使用构建产物 `dist/cli.mjs`。只有在本地开发且 `dist/cli.mjs` 不存在时，才会回退到 `tsx src/cli.ts`。
 
 如果作为包安装，也可以这样调用：
 
@@ -157,7 +160,7 @@ node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project
 
 ## 当前版本重点
 
-这是 MVP 版本，重点验证：
+当前版本重点：
 
 - 多语言符号提取
 - 全文搜索 + CamelCase fallback
@@ -165,3 +168,4 @@ node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project
 - Pi 扩展集成
 - Pi 中的文件监听增量同步
 - 面向 Codex / Claude Code 等通用 Agent 的 Skill 脚本入口
+- 面向跨 Agent 使用的稳定构建版 CLI

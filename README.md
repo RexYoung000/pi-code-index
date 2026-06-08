@@ -48,10 +48,11 @@ skills/pi-code-index/
 
 Agents such as Codex, Claude Code, or other tools that understand Agent Skills can load that directory and run the included scripts.
 
-First install dependencies in this package root:
+First install dependencies and build the stable CLI in this package root:
 
 ```bash
 npm install
+npm run build
 ```
 
 Then run:
@@ -75,11 +76,13 @@ node skills/pi-code-index/scripts/analyze-impact.mjs /path/to/project 12
 
 ## CLI
 
-The package exposes a quick MVP CLI launcher:
+The package exposes a stable CLI launcher:
 
 ```bash
 node bin/pi-code-index.js <action> <project> [args...] [options]
 ```
+
+The launcher uses the built CLI at `dist/cli.mjs`. For local development only, it can fall back to `tsx src/cli.ts` if `dist/cli.mjs` is missing.
 
 If installed as a package, it can also be invoked as:
 
@@ -163,7 +166,7 @@ node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project
 
 ## Notes
 
-This is an MVP focused on:
+This is focused on:
 
 - multi-language symbol extraction
 - full-text search with CamelCase fallback
@@ -171,3 +174,4 @@ This is an MVP focused on:
 - Pi extension integration
 - file-watch incremental sync in Pi
 - generic Agent Skill scripts for Codex / Claude Code style workflows
+- stable built CLI for cross-agent usage
