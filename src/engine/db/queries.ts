@@ -106,42 +106,99 @@ export function searchNodes(
 ): SearchResult[] {
   const limit = options?.limit ?? 20;
   const conditions: string[] = [];
-  const params: Record<string, unknown> = { query: query };
+  const params: Record<string, unknown> = {};
 
   if (options?.kind) {
-    conditions.push("n.kind = @kind");
+    conditions.push("kind = @kind");
     params.kind = options.kind;
   }
   if (options?.language) {
-    conditions.push("n.language = @language");
+    conditions.push("language = @language");
     params.language = options.language;
   }
   if (options?.file) {
-    conditions.push("n.file = @file");
+    conditions.push("file = @file");
     params.file = options.file;
   }
 
-  const where = conditions.length > 0 ? "AND " + conditions.join(" AND ") : "";
+  const filterWhere = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+  const trimmed = query.trim();
 
-  const rows = db
-    .prepare(
-      `
-    SELECT n.*, nodes_fts.rank
-    FROM nodes_fts
-    JOIN nodes n ON nodes_fts.rowid = n.id
-    WHERE nodes_fts MATCH @query
-    ${where}
-    ORDER BY rank
-    LIMIT @limit
-  `
-    )
-    .all({ ...params, limit }) as Array<NodeRow & { rank: number }>;
+  // 空 query 用于“按文件/类型列出符号”，不能走 FTS MATCH
+  if (!trimmed) {
+    const rows = db
+      .prepare(
+        `SELECT * FROM nodes ${filterWhere} ORDER BY file, line LIMIT @limit`
+      )
+      .all({ ...params, limit }) as NodeRow[];
 
-  return rows.map((row) => ({
-    node: toSymbolNode(row),
-    rank: row.rank,
-    snippet: `${row.name} (${row.kind}) — ${row.file}:${row.line}`,
-  }));
+    return rows.map((row) => ({
+      node: toSymbolNode(row),
+      rank: 0,
+      snippet: `${row.name} (${row.kind}) — ${row.file}:${row.line}`,
+    }));
+  }
+
+  const ftsConditions = conditions.map((c) => c.replace(/\b(kind|language|file)\b/g, "n.$1"));
+  const ftsWhere = ftsConditions.length > 0 ? "AND " + ftsConditions.join(" AND ") : "";
+  const likeWhere = conditions.length > 0 ? "AND " + conditions.join(" AND ") : "";
+
+  const results = new Map<number, SearchResult>();
+
+  // 1) FTS 精确/前缀搜索
+  try {
+    const ftsRows = db
+      .prepare(
+        `
+      SELECT n.*, nodes_fts.rank
+      FROM nodes_fts
+      JOIN nodes n ON nodes_fts.rowid = n.id
+      WHERE nodes_fts MATCH @ftsQuery
+      ${ftsWhere}
+      ORDER BY rank
+      LIMIT @limit
+    `
+      )
+      .all({ ...params, ftsQuery: `${trimmed}*`, limit }) as Array<NodeRow & { rank: number }>;
+
+    for (const row of ftsRows) {
+      results.set(row.id, {
+        node: toSymbolNode(row),
+        rank: row.rank,
+        snippet: `${row.name} (${row.kind}) — ${row.file}:${row.line}`,
+      });
+    }
+  } catch {
+    // FTS 对特殊字符敏感，失败时继续走 LIKE fallback
+  }
+
+  // 2) LIKE fallback：支持 CamelCase 子串，例如 user -> UserService
+  if (results.size < limit) {
+    const likeRows = db
+      .prepare(
+        `
+      SELECT * FROM nodes
+      WHERE (lower(name) LIKE @like OR lower(coalesce(qualified_name, '')) LIKE @like)
+      ${likeWhere}
+      ORDER BY file, line
+      LIMIT @limit
+    `
+      )
+      .all({ ...params, like: `%${trimmed.toLowerCase()}%`, limit }) as NodeRow[];
+
+    for (const row of likeRows) {
+      if (results.size >= limit) break;
+      if (!results.has(row.id)) {
+        results.set(row.id, {
+          node: toSymbolNode(row),
+          rank: 1,
+          snippet: `${row.name} (${row.kind}) — ${row.file}:${row.line}`,
+        });
+      }
+    }
+  }
+
+  return Array.from(results.values()).slice(0, limit);
 }
 
 /** 获取节点的调用者 */
