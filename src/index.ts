@@ -9,13 +9,42 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { Text } from "@earendil-works/pi-tui";
 import { CodeIndexEngine, loadEngine, isInitialized } from "./engine/index";
+import { FileWatcher } from "./engine/sync/index";
+import { getStatusText } from "./ui/index";
 import type { SymbolKind } from "./engine/types";
 
 /** 全局引擎实例（每个会话一份） */
 let engine: CodeIndexEngine | null = null;
+/** 文件监听器 */
+let watcher: FileWatcher | null = null;
+/** 当前会话中修改过的文件（通过 tool_call 事件追踪） */
+const editedFilesInSession = new Set<string>();
 
 export default function (pi: ExtensionAPI) {
+  // ═══════════════════════════════════════
+  //  注册消息渲染器
+  // ═══════════════════════════════════════
+
+  pi.registerMessageRenderer("codeindex-context", (message, _options, theme) => {
+    const content = typeof message.content === "string"
+      ? message.content
+      : Array.isArray(message.content)
+        ? message.content.map((c: any) => c.text || "").join("")
+        : "";
+    return new Text(theme.fg("accent", content), 0, 0);
+  });
+
+  pi.registerMessageRenderer("codeindex-impact", (message, _options, theme) => {
+    const content = typeof message.content === "string"
+      ? message.content
+      : Array.isArray(message.content)
+        ? message.content.map((c: any) => c.text || "").join("")
+        : "";
+    return new Text(theme.fg("warning", content), 0, 0);
+  });
+
   // ═══════════════════════════════════════════
   //  生命周期：会话启动时自动检测和加载索引
   // ═══════════════════════════════════════════
@@ -26,15 +55,59 @@ export default function (pi: ExtensionAPI) {
     if (isInitialized(cwd)) {
       engine = await loadEngine(cwd);
       if (engine) {
-        const stats = engine.getStats();
-        ctx.ui.setStatus(
-          "code-index",
-          `📊 ${stats.totalNodes} 符号 · ${stats.totalFiles} 文件`
-        );
+        // 启动文件监听，自动增量同步
+        watcher = new FileWatcher(engine, cwd);
+        watcher.start();
+
+        ctx.ui.setStatus("code-index", getStatusText(engine));
+        ctx.ui.setWidget("code-index", [
+          getStatusText(engine),
+          "文件监听已启动 · 使用 /codeindex-init 重建索引",
+        ]);
       }
     } else {
-      ctx.ui.setStatus("code-index", "📊 未索引");
+      ctx.ui.setStatus("code-index", "📊 未索引 — 使用 /codeindex-init 初始化");
     }
+  });
+
+  // ═══════════════════════════════════════
+  //  命令：手动初始化索引
+  // ═══════════════════════════════════════
+
+  pi.registerCommand("codeindex-init", {
+    description: "初始化或重建代码索引",
+    handler: async (_args, ctx) => {
+      const cwd = ctx.cwd;
+      ctx.ui.notify("正在初始化代码索引...", "info");
+
+      try {
+        const newEngine = new CodeIndexEngine(cwd);
+        await newEngine.init();
+        await newEngine.indexAll({
+          onProgress: (p) => {
+            if (p.current === p.total) {
+              ctx.ui.setStatus("code-index", `📂 ${p.phase}: ${p.total} 个文件`);
+            }
+          },
+        });
+
+        // 更新全局 engine
+        if (engine) engine.close();
+        if (watcher) watcher.stop();
+        engine = newEngine;
+        watcher = new FileWatcher(engine, cwd);
+        watcher.start();
+
+        const stats = engine.getStats();
+        ctx.ui.setStatus("code-index", getStatusText(engine));
+        ctx.ui.notify(
+          `索引完成！${stats.totalFiles} 个文件，${stats.totalNodes} 个符号`,
+          "info"
+        );
+      } catch (e: any) {
+        ctx.ui.notify(`索引失败: ${e.message}`, "error");
+      }
+    },
   });
 
   // ═══════════════════════════════════════════
@@ -87,36 +160,12 @@ export default function (pi: ExtensionAPI) {
   //  能力 3：AI 改完后 — 变更影响检查
   // ═══════════════════════════════════════════
 
-  pi.on("agent_end", async (event, ctx) => {
-    if (!engine) return;
+  pi.on("agent_end", async () => {
+    if (!engine || editedFilesInSession.size === 0) return;
 
-    // 收集本次会话中修改过的文件
-    const editedFiles = new Set<string>();
-    for (const msg of event.messages) {
-      if (
-        msg.role === "toolResult" &&
-        (msg.toolName === "edit" || msg.toolName === "write")
-      ) {
-        // 尝试从 tool result 中提取文件路径
-        if (msg.content) {
-          const parts = Array.isArray(msg.content) ? msg.content : [msg.content];
-          for (const part of parts) {
-            if (typeof part === "object" && "text" in part && typeof part.text === "string") {
-              const pathMatch = part.text.match(/(?:modified|wrote|created)\s+(.+?)(?:\n|$)/i);
-              if (pathMatch) {
-                editedFiles.add(pathMatch[1].trim());
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (editedFiles.size === 0) return;
-
-    // 对于修改过的文件中的符号，检查影响范围
+    // 对修改过的文件中的主要符号检查影响范围
     const affectedSymbols: string[] = [];
-    for (const file of editedFiles) {
+    for (const file of editedFilesInSession) {
       const symbols = engine.search("", { file, limit: 5 });
       for (const { node } of symbols) {
         try {
@@ -132,16 +181,18 @@ export default function (pi: ExtensionAPI) {
       }
     }
 
+    editedFilesInSession.clear();
+
     if (affectedSymbols.length > 0) {
       pi.sendMessage({
         customType: "codeindex-impact",
         content: [
           "## ⚠️ 变更影响提示",
           "",
-          "以下符号的修改可能影响较多关联代码：",
+          `${affectedSymbols.length} 个符号的修改影响了较多关联代码：`,
           ...affectedSymbols.map((s) => `- ${s}`),
           "",
-          "建议用 `codeindex_impact` 查看详情。",
+          "建议用 \`codeindex_impact\` 查看详情。",
         ].join("\n"),
         display: true,
       });
@@ -151,6 +202,59 @@ export default function (pi: ExtensionAPI) {
   // ═══════════════════════════════════════════
   //  能力 2：AI 工作中 — 注册查询工具
   // ═══════════════════════════════════════════
+
+  // ── codeindex_init ──
+  pi.registerTool({
+    name: "codeindex_init",
+    label: "初始化索引",
+    description:
+      "初始化或重建代码索引。索引完成后自动启动文件监听。",
+    promptSnippet: "Initialize or rebuild the code index",
+    parameters: Type.Object({}),
+    async execute(_toolCallId, _params, _signal, onUpdate, _ctx) {
+      const cwd = _ctx.cwd;
+
+      // 关闭旧引擎
+      if (engine) engine.close();
+      if (watcher) watcher.stop();
+
+      const newEngine = new CodeIndexEngine(cwd);
+      await newEngine.init();
+
+      const eventCount = { count: 0 };
+      await newEngine.indexAll({
+        onProgress: (p) => {
+          eventCount.count++;
+          if (eventCount.count % 5 === 0) {
+            onUpdate?.({
+              content: [
+                {
+                  type: "text",
+                  text: `${p.phase}: ${p.current}/${p.total}`,
+                },
+              ],
+              details: {},
+            });
+          }
+        },
+      });
+
+      engine = newEngine;
+      watcher = new FileWatcher(engine, cwd);
+      watcher.start();
+
+      const stats = engine.getStats();
+      return {
+        content: [
+          {
+            type: "text",
+            text: `索引完成！${stats.totalFiles} 个文件，${stats.totalNodes} 个符号，${stats.totalEdges} 条关系。文件监听已启动。`,
+          },
+        ],
+        details: { stats },
+      };
+    },
+  });
 
   // ── codeindex_search ──
   pi.registerTool({
@@ -585,6 +689,10 @@ export default function (pi: ExtensionAPI) {
   // ═══════════════════════════════════════════
 
   pi.on("session_shutdown", async () => {
+    if (watcher) {
+      watcher.stop();
+      watcher = null;
+    }
     if (engine) {
       engine.close();
       engine = null;

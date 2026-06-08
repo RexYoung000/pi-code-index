@@ -12,6 +12,7 @@ import { extractPython } from "./languages/python";
 import { extractGo } from "./languages/go";
 import { extractRust } from "./languages/rust";
 import { extractJava } from "./languages/java";
+import { extractC } from "./languages/c-cpp";
 import { discoverFiles } from "./discover";
 
 /** 提取一个文件的符号和关系 */
@@ -57,6 +58,10 @@ async function extractByLanguage(
       return extractRust(file, source, startNodeId, startEdgeId);
     case "java":
       return extractJava(file, source, startNodeId, startEdgeId);
+    case "c":
+      return extractC(source, file, startNodeId, startEdgeId, "c");
+    case "cpp":
+      return extractC(source, file, startNodeId, startEdgeId, "cpp");
   }
 }
 
@@ -72,7 +77,8 @@ export async function indexProject(
   let nodeId = 1;
   let edgeId = 1;
 
-  const BATCH_SIZE = 10;
+  // 每批处理 20 个文件，避免大项目 OOM
+  const BATCH_SIZE = 20;
   for (let i = 0; i < files.length; i += BATCH_SIZE) {
     const batch = files.slice(i, i + BATCH_SIZE);
     onProgress?.({ phase: "indexing", current: Math.min(i + BATCH_SIZE, files.length), total: files.length });
@@ -89,6 +95,23 @@ export async function indexProject(
         console.error(`Failed to index ${file}:`, (err as Error).message);
       }
     }
+  }
+
+  // 跨文件引用解析
+  onProgress?.({ phase: "resolving", current: files.length, total: files.length });
+  try {
+    const { resolveCrossFileReferences } = await import("../resolution/cross-file");
+    const resolved = resolveCrossFileReferences(db);
+    if (resolved > 0) {
+      console.log(`Resolved ${resolved} cross-file references`);
+    }
+    // 清理后剩余的 -1 边（外部库引用等，属于正常情况）
+    const remaining = db.prepare("SELECT COUNT(*) as c FROM edges WHERE to_id = -1").get() as { c: number };
+    if (remaining.c > 0) {
+      console.log(`${remaining.c} unresolved references (external packages etc.)`);
+    }
+  } catch (err) {
+    console.error("Cross-file resolution failed:", (err as Error).message);
   }
 
   onProgress?.({ phase: "done", current: files.length, total: files.length });
@@ -113,8 +136,8 @@ export function saveExtraction(
   `);
 
   const insertEdge = db.prepare(`
-    INSERT INTO edges (id, from_id, to_id, kind, file, line)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO edges (id, from_id, to_id, kind, file, line, label)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   const transaction = db.transaction(() => {
@@ -132,7 +155,7 @@ export function saveExtraction(
     }
 
     for (const edge of edges) {
-      insertEdge.run(edge.id, edge.fromId, edge.toId, edge.kind, edge.file, edge.line);
+      insertEdge.run(edge.id, edge.fromId, edge.toId, edge.kind, edge.file, edge.line, edge.label ?? null);
     }
   });
 

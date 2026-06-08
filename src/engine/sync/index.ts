@@ -14,14 +14,14 @@ const DEBOUNCE_MS = 2000;
 
 export class FileWatcher {
   private watchers: FSWatcher[] = [];
-  private db: Database;
+  private engine: any;
   private projectRoot: string;
   private pending = new Set<string>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
 
-  constructor(db: Database, projectRoot: string) {
-    this.db = db;
+  constructor(engine: any, projectRoot: string) {
+    this.engine = engine;
     this.projectRoot = projectRoot;
   }
 
@@ -91,7 +91,8 @@ export class FileWatcher {
 
       try {
         const { nodes, edges } = await extractFile(file, 1, 1);
-        saveExtraction(this.db, file, lang, nodes, edges);
+        const db = this.engine.rawDb;
+        if (db) saveExtraction(db, file, lang, nodes, edges);
       } catch {
         // 解析失败，跳过
       }

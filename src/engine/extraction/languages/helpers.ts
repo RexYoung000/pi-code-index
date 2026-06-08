@@ -81,6 +81,7 @@ export function extractCalls(
             kind: "calls",
             file: ctx.file,
             line: current.startPosition.row + 1,
+            label: callName,
           });
         }
       }

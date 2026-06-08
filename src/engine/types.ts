@@ -57,6 +57,8 @@ export interface SymbolEdge {
   kind: EdgeKind;
   file: string;
   line: number;
+  /** 调用目标名称，用于跨文件解析 */
+  label?: string;
 }
 
 /** 索引统计信息 */
@@ -76,6 +78,8 @@ export const SUPPORTED_LANGUAGES = [
   "go",
   "rust",
   "java",
+  "c",
+  "cpp",
 ] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -92,6 +96,11 @@ export const EXTENSION_TO_LANGUAGE: Record<string, SupportedLanguage> = {
   ".go": "go",
   ".rs": "rust",
   ".java": "java",
+  ".c": "c",
+  ".h": "c",
+  ".cpp": "cpp",
+  ".hpp": "cpp",
+  ".cc": "cpp",
 };
 
 /** 根据文件路径获取语言 */

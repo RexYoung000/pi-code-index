@@ -29,6 +29,11 @@ const DATA_DIR = ".codeindex";
 
 export class CodeIndexEngine {
   private db: Database | null = null;
+
+  /** 获取底层数据库实例（供文件监听等内部模块使用） */
+  get rawDb(): Database | null {
+    return this.db;
+  }
   private projectRoot: string;
   private dbPath: string;
 
