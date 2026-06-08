@@ -294,12 +294,13 @@ function resolveCalls(ctx: ExtractionContext): void {
 
   for (const edge of edges) {
     const targets = nameMap.get(edge.toName);
-    if (targets) {
+    let bestTarget = -1;
+    if (targets && targets.length > 0) {
       // 优先匹配同父级的符号
       const caller = ctx.nodes.find((n) => n.id === edge.fromId);
       const callerParent = caller?.parentId;
 
-      let bestTarget = targets[0];
+      bestTarget = targets[0];
       if (callerParent) {
         const sibling = targets.find((tid) => {
           const t = ctx.nodes.find((n) => n.id === tid);
@@ -307,16 +308,18 @@ function resolveCalls(ctx: ExtractionContext): void {
         });
         if (sibling) bestTarget = sibling;
       }
-
-      ctx.edges.push({
-        id: ctx.nextEdgeId++,
-        fromId: edge.fromId,
-        toId: bestTarget,
-        kind: "calls",
-        file: ctx.file,
-        line: edge.line,
-      });
     }
+
+    // 总是创建边（toId=-1 的由跨文件解析器后续处理）
+    ctx.edges.push({
+      id: ctx.nextEdgeId++,
+      fromId: edge.fromId,
+      toId: bestTarget,
+      kind: "calls",
+      file: ctx.file,
+      line: edge.line,
+      label: edge.toName,
+    });
   }
 
   unresolvedEdges.delete(ctx.file);
