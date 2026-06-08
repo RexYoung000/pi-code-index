@@ -6,9 +6,18 @@
     "pi-package"
   ],
   "license": "MIT",
+  "bin": {
+    "pi-code-index": "./bin/pi-code-index.js"
+  },
+  "scripts": {
+    "build": "tsc --noEmit"
+  },
   "pi": {
     "extensions": [
       "./src/index.ts"
+    ],
+    "skills": [
+      "./skills"
     ]
   },
   "dependencies": {
@@ -37,6 +46,8 @@
   },
   "files": [
     "src",
+    "bin",
+    "skills",
     "README.md",
     "README.zh-CN.md"
   ]
