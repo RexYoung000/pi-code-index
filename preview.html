@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=800,height=500">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 800px; height: 500px;
+    background: #0d1117;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+    color: #c9d1d9;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .header {
+    background: #161b22; border-bottom: 1px solid #30363d;
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+  }
+  .header .title { color: #58a6ff; font-weight: bold; }
+  .header .badge { 
+    background: #1f6feb; color: #fff; font-size: 10px; 
+    padding: 2px 6px; border-radius: 8px; 
+  }
+  .main { display: flex; flex: 1; overflow: hidden; }
+  .sidebar {
+    width: 220px; background: #0d1117;
+    border-right: 1px solid #30363d;
+    padding: 12px 0;
+  }
+  .sidebar .section { 
+    font-size: 10px; color: #484f58; 
+    padding: 6px 16px; text-transform: uppercase; 
+  }
+  .sidebar .item {
+    padding: 6px 16px; font-size: 12px; color: #8b949e;
+    cursor: default; border-left: 3px solid transparent;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sidebar .item.active { 
+    color: #f0f6fc; background: #1c2128; 
+    border-left-color: #f78166; 
+  }
+  .sidebar .item .icon { font-size: 14px; width: 20px; }
+  .content {
+    flex: 1; padding: 16px; overflow: hidden;
+  }
+  .graph-title {
+    font-size: 14px; color: #f0f6fc; margin-bottom: 6px;
+  }
+  .graph-subtitle { font-size: 11px; color: #8b949e; margin-bottom: 14px; }
+  .graph {
+    background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; padding: 20px; min-height: 260px;
+    position: relative;
+  }
+  .node {
+    position: absolute;
+    background: #1c2128; border: 1px solid #30363d;
+    border-radius: 6px; padding: 6px 12px;
+    font-size: 11px; text-align: center;
+  }
+  .node .sym { color: #58a6ff; font-weight: bold; }
+  .node .file { color: #484f58; font-size: 9px; margin-top: 2px; }
+  .node.core { border-color: #f78166; background: #1a1513; }
+  .node.core .sym { color: #f78166; }
+  .node .badge {
+    font-size: 8px; padding: 1px 5px; border-radius: 6px;
+    background: #1f6feb; color: #fff; margin-top: 3px;
+    display: inline-block;
+  }
+  .stats {
+    display: flex; gap: 12px; margin-top: 12px;
+  }
+  .stat {
+    background: #161b22; border: 1px solid #30363d;
+    border-radius: 6px; padding: 10px 14px; flex: 1;
+    text-align: center;
+  }
+  .stat .num { font-size: 20px; font-weight: bold; color: #58a6ff; }
+  .stat .label { font-size: 10px; color: #8b949e; margin-top: 2px; }
+  .tool-bar {
+    background: #161b22; border-top: 1px solid #30363d;
+    padding: 8px 16px; display: flex; gap: 8px;
+    font-size: 11px;
+  }
+  .tool-chip {
+    padding: 4px 10px; border: 1px solid #30363d;
+    border-radius: 4px; color: #8b949e;
+    cursor: default;
+  }
+  .tool-chip.active { border-color: #58a6ff; color: #58a6ff; }
+</style>
+</head>
+<body>
+<div class="header">
+  <span>🔍</span>
+  <span class="title">pi-code-indexer</span>
+  <span class="badge">v0.4.1</span>
+  <span style="color:#8b949e;margin-left:auto">6 种语言 · 182KB 索引</span>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="section">项目</div>
+    <div class="item active"><span class="icon">📁</span> pi-code-index</div>
+    <div class="item"><span class="icon">📁</span> pi-budget</div>
+    <div class="item"><span class="icon">📁</span> pi-ui-workflow</div>
+    <div class="section" style="margin-top:10px">操作</div>
+    <div class="item"><span class="icon">🔎</span> search</div>
+    <div class="item"><span class="icon">📞</span> callers</div>
+    <div class="item"><span class="icon">📤</span> callees</div>
+    <div class="item"><span class="icon">💥</span> impact</div>
+  </div>
+
+  <div class="content">
+    <div class="graph-title">📊 代码图谱：extractSymbols</div>
+    <div class="graph-subtitle">src/engine/extraction/index.ts · 调用链分析</div>
+    
+    <div class="graph">
+      <div class="node core" style="top:15px;left:240px">
+        <div class="sym">extractSymbols</div>
+        <div class="file">extraction/index.ts</div>
+        <span class="badge">入口</span>
+      </div>
+      <div class="node" style="top:90px;left:80px">
+        <div class="sym">parseFile</div>
+        <div class="file">tree-sitter.ts</div>
+      </div>
+      <div class="node" style="top:90px;left:400px">
+        <div class="sym">traverseAST</div>
+        <div class="file">extraction/index.ts</div>
+      </div>
+      <div class="node" style="top:165px;left:40px">
+        <div class="sym">createQuery</div>
+        <div class="file">languages/base.ts</div>
+      </div>
+      <div class="node" style="top:165px;left:200px">
+        <div class="sym">getParser</div>
+        <div class="file">tree-sitter.ts</div>
+      </div>
+      <div class="node" style="top:165px;left:370px">
+        <div class="sym">resolveRefs</div>
+        <div class="file">cross-file.ts</div>
+      </div>
+      <div class="node" style="top:165px;left:530px">
+        <div class="sym">insertSymbol</div>
+        <div class="file">db/queries.ts</div>
+      </div>
+
+      <svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none">
+        <line x1="305" y1="48" x2="150" y2="90" stroke="#30363d" stroke-width="1"/>
+        <line x1="305" y1="48" x2="460" y2="90" stroke="#30363d" stroke-width="1"/>
+        <line x1="150" y1="125" x2="90" y2="165" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="150" y1="125" x2="240" y2="165" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="460" y1="125" x2="420" y2="165" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="460" y1="125" x2="575" y2="165" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>
+      </svg>
+    </div>
+    
+    <div class="stats">
+      <div class="stat"><div class="num">847</div><div class="label">符号总数</div></div>
+      <div class="stat"><div class="num">53</div><div class="label">文件索引</div></div>
+      <div class="stat"><div class="num">238</div><div class="label">跨文件引用</div></div>
+      <div class="stat"><div class="num">2.1s</div><div class="label">全量构建</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="tool-bar">
+  <span style="color:#8b949e">AI 工具：</span>
+  <span class="tool-chip active">codeindex</span>
+  <span class="tool-chip">context</span>
+  <span class="tool-chip">impact</span>
+  <span class="tool-chip">callers</span>
+  <span class="tool-chip">callees</span>
+</div>
+</body>
+</html>
