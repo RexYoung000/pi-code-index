@@ -1,6 +1,6 @@
 {
   "name": "pi-code-indexer",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "AI 驱动的代码知识图谱 — 让 AI 编程助手更快、更准地理解和修改代码",
   "keywords": [
     "pi-package",
@@ -32,7 +32,8 @@
     ],
     "skills": [
       "./skills"
-    ]
+    ],
+    "image": "https://raw.githubusercontent.com/RexYoung000/pi-code-index/main/preview.png"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
