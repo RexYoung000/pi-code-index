@@ -1,9 +1,19 @@
 {
   "name": "pi-code-indexer",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "AI 驱动的代码知识图谱 — 让 AI 编程助手更快、更准地理解和修改代码",
   "keywords": [
-    "pi-package"
+    "pi-package",
+    "pi-extension",
+    "pi-skill",
+    "code-index",
+    "codebase",
+    "symbol-search",
+    "code-intelligence",
+    "code-graph",
+    "code-analysis",
+    "ast",
+    "tree-sitter"
   ],
   "license": "MIT",
   "bin": {
