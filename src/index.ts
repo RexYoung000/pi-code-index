@@ -3,7 +3,14 @@
  * 单工具版：减少工具 schema token 开销，符合“省 token”初衷。
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import {
+  DEFAULT_MAX_BYTES,
+  DEFAULT_MAX_LINES,
+  formatSize,
+  truncateHead,
+  type ExtensionAPI,
+} from "@earendil-works/pi-coding-agent";
+import { StringEnum } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { Text } from "@earendil-works/pi-tui";
 import { CodeIndexEngine, loadEngine, isInitialized } from "./engine/index";
@@ -47,7 +54,13 @@ function resolveNodes(nodeId?: number, name?: string, file?: string) {
 }
 
 function textResult(text: string, details: Record<string, unknown> = {}) {
-  return { content: [{ type: "text" as const, text }], details };
+  // 统一截断：避免大结果撑爆 LLM 上下文 / 导致压缩失败（官方 50KB / 2000 行上限）
+  const trunc = truncateHead(text, { maxLines: DEFAULT_MAX_LINES, maxBytes: DEFAULT_MAX_BYTES });
+  let out = trunc.content;
+  if (trunc.truncated) {
+    out += `\n\n[结果已截断：显示 ${trunc.outputLines}/${trunc.totalLines} 行（${formatSize(trunc.outputBytes)} / ${formatSize(trunc.totalBytes)}）。请用更精确的 query 或更小的 limit 缩小范围。]`;
+  }
+  return { content: [{ type: "text" as const, text: out }], details };
 }
 
 export default function (pi: ExtensionAPI) {
@@ -181,7 +194,10 @@ export default function (pi: ExtensionAPI) {
     description: "Query local code index. actions: init/search/context/callers/callees/impact/explore/status/files.",
     promptSnippet: "Query local code index for symbols, context, calls, impact, files, status, init",
     parameters: Type.Object({
-      action: Type.String({ description: "init/search/context/callers/callees/impact/explore/status/files" }),
+      action: StringEnum(
+        ["init", "search", "context", "callers", "callees", "impact", "explore", "status", "files"] as const,
+        { description: "要执行的操作" },
+      ),
       query: Type.Optional(Type.String({ description: "search text, task text, symbol name, or file filter" })),
       id: Type.Optional(Type.Number({ description: "symbol id" })),
       ids: Type.Optional(Type.Array(Type.Number(), { description: "symbol ids" })),

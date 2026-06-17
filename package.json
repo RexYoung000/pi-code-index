@@ -42,6 +42,7 @@
     "web-tree-sitter": "^0.25.3"
   },
   "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*",
     "typebox": "*"
@@ -50,6 +51,7 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
+    "@earendil-works/pi-ai": "^0.78.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.9.2",
     "esbuild": "^0.28.0",
