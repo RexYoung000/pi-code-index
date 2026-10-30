@@ -36,7 +36,7 @@
     "image": "https://raw.githubusercontent.com/RexYoung000/pi-code-index/main/preview.png"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "^13.0.3",
     "ignore": "^7.0.5",
     "tree-sitter-wasms": "^0.1.13",
     "web-tree-sitter": "^0.25.3"
@@ -48,7 +48,7 @@
     "typebox": "*"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "^0.78.1",
