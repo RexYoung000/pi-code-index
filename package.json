@@ -1,6 +1,6 @@
 {
   "name": "pi-code-indexer",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "AI 驱动的代码知识图谱 — 让 AI 编程助手更快、更准地理解和修改代码",
   "keywords": [
     "pi-package",
@@ -21,6 +21,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
+    "test": "tsx --test tests/*.test.ts",
     "build": "npm run typecheck && esbuild src/cli.ts --bundle --platform=node --target=node20 --format=esm --packages=external --outfile=dist/cli.mjs",
     "postbuild": "chmod +x dist/cli.mjs",
     "prepare-skill": "npm run build",

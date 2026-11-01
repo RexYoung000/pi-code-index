@@ -21,6 +21,14 @@ export async function extractGo(
 
   try {
     extractSourceFile(tree.rootNode, ctx);
+    // Go 允许方法先于类型声明；收集完同文件符号后再补全归属。
+    for (const method of ctx.nodes) {
+      if (method.kind !== "method" || !method.qualifiedName) continue;
+      const receiverName = method.qualifiedName.slice(0, method.qualifiedName.lastIndexOf("."));
+      method.parentId = ctx.nodes.find(n => n.kind === "class" && n.name === receiverName)?.id ?? null;
+    }
+    // 数据库立即检查 parent_id 外键，父类型必须先于方法写入。
+    ctx.nodes.sort((a, b) => Number(a.parentId !== null) - Number(b.parentId !== null));
   } finally {
     // gc
   }
@@ -29,8 +37,6 @@ export async function extractGo(
 }
 
 function extractSourceFile(node: Node, ctx: ExtractionContext): void {
-  let currentStructId: number | null = null;
-
   for (let i = 0; i < node.childCount; i++) {
     const child = node.child(i);
     if (!child) continue;
@@ -53,25 +59,17 @@ function extractSourceFile(node: Node, ctx: ExtractionContext): void {
           const name = getName(child, ctx);
           const receiver = child.childForFieldName("receiver");
           let qName = name ?? "";
-          let parentId: number | null = null;
 
           if (receiver) {
             // 提取 receiver 类型名
             const typeNode = findTypeInReceiver(receiver, ctx);
             if (typeNode) {
               qName = `${typeNode}.${name}`;
-              // 尝试找父 struct
-              for (const n of ctx.nodes) {
-                if (n.name === typeNode && n.kind === "class") {
-                  parentId = n.id;
-                  break;
-                }
-              }
             }
           }
 
           if (name) {
-            const id = addNode(ctx, name, "method", child, parentId, qName);
+            const id = addNode(ctx, name, "method", child, null, qName);
             ctx.nodes[ctx.nodes.length - 1].language = "go";
 
             const body = child.childForFieldName("body");
@@ -93,9 +91,8 @@ function extractSourceFile(node: Node, ctx: ExtractionContext): void {
             if (!name) continue;
 
             if (typeChild.type === "struct_type") {
-              const id = addNode(ctx, name, "class", spec, null, name);
+              addNode(ctx, name, "class", spec, null, name);
               ctx.nodes[ctx.nodes.length - 1].language = "go";
-              currentStructId = id;
             } else if (typeChild.type === "interface_type") {
               const id = addNode(ctx, name, "interface", spec, null, name);
               ctx.nodes[ctx.nodes.length - 1].language = "go";
@@ -103,10 +100,6 @@ function extractSourceFile(node: Node, ctx: ExtractionContext): void {
           }
           break;
         }
-
-        case "method_declaration":
-          // 已经在上面处理了
-          break;
 
         default:
           extractSourceFile(child, ctx);
@@ -119,19 +112,9 @@ function extractSourceFile(node: Node, ctx: ExtractionContext): void {
 }
 
 function findTypeInReceiver(node: Node, ctx: ExtractionContext): string | null {
-  // receiver 结构: (name *Type) 或 (name Type) 或 (Type)
-  for (let i = 0; i < node.childCount; i++) {
-    const child = node.child(i);
-    if (!child) continue;
-    if (child.type === "type_identifier") {
-      return ctx.source.slice(child.startIndex, child.endIndex);
-    }
-    if (child.type === "pointer_type") {
-      const inner = child.child(0);
-      if (inner && inner.type === "type_identifier") {
-        return ctx.source.slice(inner.startIndex, inner.endIndex);
-      }
-    }
-  }
-  return null;
+  const parameter = node.namedChildren.find(child => child?.type === "parameter_declaration");
+  let type = parameter?.childForFieldName("type");
+  if (type?.type === "pointer_type") type = type.namedChild(0);
+  if (type?.type === "generic_type") type = type.childForFieldName("type");
+  return type?.type === "type_identifier" ? ctx.source.slice(type.startIndex, type.endIndex) : null;
 }

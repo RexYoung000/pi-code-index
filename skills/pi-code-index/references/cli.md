@@ -1,16 +1,20 @@
 # CLI Reference
 
+`<skill-dir>` below is the absolute path of the folder containing `SKILL.md` (the parent of `references/`). The scripts resolve the package root from their own location, so only the skill directory needs to be absolute. A path relative to the analyzed project will not resolve.
+
 The generic CLI is exposed through:
 
 ```bash
-node bin/pi-code-index.js <action> <project> [args...] [options]
+node "<skill-dir>/scripts/codeindex.mjs" <action> <project> [args...] [options]
 ```
 
-The skill wrapper is usually easier for agents:
+The package launcher is the same CLI, addressed from the package root:
 
 ```bash
-node skills/pi-code-index/scripts/codeindex.mjs <action> <project> [args...] [options]
+node "<package-root>/bin/pi-code-index.js" <action> <project> [args...] [options]
 ```
+
+A global npm install exposes `pi-code-index` on `PATH`; a local npm install exposes it under `node_modules/.bin`. Pi-managed installations do not guarantee either command is on your shell’s `PATH`; use the absolute skill script path.
 
 ## Actions
 

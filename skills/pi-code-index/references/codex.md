@@ -7,13 +7,15 @@ npm install
 npm run build
 ```
 
-Then run commands from the package root or adjust paths accordingly:
+Then run commands from any directory, using the absolute path of this skill folder:
 
 ```bash
-node skills/pi-code-index/scripts/codeindex.mjs status /path/to/project --json
-node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project --json
-node skills/pi-code-index/scripts/codeindex.mjs context /path/to/project "task description" --json
+node "<skill-dir>/scripts/codeindex.mjs" status /path/to/project --json
+node "<skill-dir>/scripts/codeindex.mjs" init /path/to/project --json
+node "<skill-dir>/scripts/codeindex.mjs" context /path/to/project "task description" --json
 ```
+
+`<skill-dir>` is the folder containing `SKILL.md`, one level above this `references/` directory. Using a path relative to the target project fails with `Cannot find module`.
 
 For editing tasks, recommended Codex workflow:
 

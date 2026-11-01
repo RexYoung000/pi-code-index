@@ -56,36 +56,36 @@ npm install
 npm run build
 ```
 
-然后可以运行：
+然后可以运行。把 `<skill-dir>` 换成本仓库 `skills/pi-code-index` 的绝对路径 —— 脚本会从自身位置定位包根目录，所以这里必须是绝对路径：
 
 ```bash
-node skills/pi-code-index/scripts/codeindex.mjs status /path/to/project --json
-node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project --json
-node skills/pi-code-index/scripts/codeindex.mjs search /path/to/project "CodeIndexEngine" --json
-node skills/pi-code-index/scripts/codeindex.mjs context /path/to/project "把项目改造成可复用 skill" --json
-node skills/pi-code-index/scripts/codeindex.mjs impact /path/to/project 12 --depth 2 --json
+node "<skill-dir>/scripts/codeindex.mjs" status /path/to/project --json
+node "<skill-dir>/scripts/codeindex.mjs" init /path/to/project --json
+node "<skill-dir>/scripts/codeindex.mjs" search /path/to/project "CodeIndexEngine" --json
+node "<skill-dir>/scripts/codeindex.mjs" context /path/to/project "把项目改造成可复用 skill" --json
+node "<skill-dir>/scripts/codeindex.mjs" impact /path/to/project 12 --depth 2 --json
 ```
 
 也可以使用更语义化的脚本：
 
 ```bash
-node skills/pi-code-index/scripts/index-project.mjs /path/to/project
-node skills/pi-code-index/scripts/search-code.mjs /path/to/project "CodeIndexEngine"
-node skills/pi-code-index/scripts/build-context.mjs /path/to/project "把项目改造成可复用 skill"
-node skills/pi-code-index/scripts/analyze-impact.mjs /path/to/project 12
+node "<skill-dir>/scripts/index-project.mjs" /path/to/project
+node "<skill-dir>/scripts/search-code.mjs" /path/to/project "CodeIndexEngine"
+node "<skill-dir>/scripts/build-context.mjs" /path/to/project "把项目改造成可复用 skill"
+node "<skill-dir>/scripts/analyze-impact.mjs" /path/to/project 12
 ```
 
 ## CLI
 
-项目提供了稳定版 CLI 启动器：
+项目提供了稳定版 CLI 启动器。把 `<package-root>` 换成安装包根目录的绝对路径：
 
 ```bash
-node bin/pi-code-index.js <action> <project> [args...] [options]
+node "<package-root>/bin/pi-code-index.js" <action> <project> [args...] [options]
 ```
 
 启动器会优先使用构建产物 `dist/cli.mjs`。只有在本地开发且 `dist/cli.mjs` 不存在时，才会回退到 `tsx src/cli.ts`。
 
-如果作为包安装，也可以这样调用：
+全局 npm 安装会将下面的命令加入 `PATH`，本地 npm 安装则放在 `node_modules/.bin`。Pi 管理的安装请使用上方的 skill 脚本绝对路径：
 
 ```bash
 pi-code-index <action> <project> [args...] [options]
@@ -155,7 +155,7 @@ codeindex
 通过通用 Agent 脚本重建：
 
 ```bash
-node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project
+node "<skill-dir>/scripts/codeindex.mjs" init /path/to/project
 ```
 
 ## 当前版本重点

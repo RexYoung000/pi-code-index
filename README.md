@@ -55,36 +55,36 @@ npm install
 npm run build
 ```
 
-Then run:
+Then run the commands below. Replace `<skill-dir>` with the absolute path of `skills/pi-code-index` in this repository — the scripts locate the package root from their own location, so use an absolute path to run these commands from any working directory:
 
 ```bash
-node skills/pi-code-index/scripts/codeindex.mjs status /path/to/project --json
-node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project --json
-node skills/pi-code-index/scripts/codeindex.mjs search /path/to/project "CodeIndexEngine" --json
-node skills/pi-code-index/scripts/codeindex.mjs context /path/to/project "add a reusable skill version" --json
-node skills/pi-code-index/scripts/codeindex.mjs impact /path/to/project 12 --depth 2 --json
+node "<skill-dir>/scripts/codeindex.mjs" status /path/to/project --json
+node "<skill-dir>/scripts/codeindex.mjs" init /path/to/project --json
+node "<skill-dir>/scripts/codeindex.mjs" search /path/to/project "CodeIndexEngine" --json
+node "<skill-dir>/scripts/codeindex.mjs" context /path/to/project "add a reusable skill version" --json
+node "<skill-dir>/scripts/codeindex.mjs" impact /path/to/project 12 --depth 2 --json
 ```
 
 Semantic wrappers are also available:
 
 ```bash
-node skills/pi-code-index/scripts/index-project.mjs /path/to/project
-node skills/pi-code-index/scripts/search-code.mjs /path/to/project "CodeIndexEngine"
-node skills/pi-code-index/scripts/build-context.mjs /path/to/project "add a reusable skill version"
-node skills/pi-code-index/scripts/analyze-impact.mjs /path/to/project 12
+node "<skill-dir>/scripts/index-project.mjs" /path/to/project
+node "<skill-dir>/scripts/search-code.mjs" /path/to/project "CodeIndexEngine"
+node "<skill-dir>/scripts/build-context.mjs" /path/to/project "add a reusable skill version"
+node "<skill-dir>/scripts/analyze-impact.mjs" /path/to/project 12
 ```
 
 ## CLI
 
-The package exposes a stable CLI launcher:
+The package exposes a stable CLI launcher. Replace `<package-root>` with the absolute path of the package installation:
 
 ```bash
-node bin/pi-code-index.js <action> <project> [args...] [options]
+node "<package-root>/bin/pi-code-index.js" <action> <project> [args...] [options]
 ```
 
 The launcher uses the built CLI at `dist/cli.mjs`. For local development only, it can fall back to `tsx src/cli.ts` if `dist/cli.mjs` is missing.
 
-If installed as a package, it can also be invoked as:
+A global npm install exposes the command below on `PATH`; local installs expose it under `node_modules/.bin`. For Pi-managed installations, use the absolute skill script path above:
 
 ```bash
 pi-code-index <action> <project> [args...] [options]
@@ -161,7 +161,7 @@ To rebuild it in Pi:
 To rebuild it from a generic agent script:
 
 ```bash
-node skills/pi-code-index/scripts/codeindex.mjs init /path/to/project
+node "<skill-dir>/scripts/codeindex.mjs" init /path/to/project
 ```
 
 ## Notes

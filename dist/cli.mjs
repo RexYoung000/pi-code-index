@@ -1048,12 +1048,17 @@ async function extractGo(file, source, startNodeId, startEdgeId) {
   const ctx = createContext(file, source, startNodeId, startEdgeId);
   try {
     extractSourceFile(tree.rootNode, ctx);
+    for (const method of ctx.nodes) {
+      if (method.kind !== "method" || !method.qualifiedName) continue;
+      const receiverName = method.qualifiedName.slice(0, method.qualifiedName.lastIndexOf("."));
+      method.parentId = ctx.nodes.find((n) => n.kind === "class" && n.name === receiverName)?.id ?? null;
+    }
+    ctx.nodes.sort((a, b) => Number(a.parentId !== null) - Number(b.parentId !== null));
   } finally {
   }
   return { nodes: ctx.nodes, edges: ctx.edges };
 }
 function extractSourceFile(node, ctx) {
-  let currentStructId = null;
   for (let i = 0; i < node.childCount; i++) {
     const child = node.child(i);
     if (!child) continue;
@@ -1073,21 +1078,14 @@ function extractSourceFile(node, ctx) {
           const name = getName(child, ctx);
           const receiver = child.childForFieldName("receiver");
           let qName = name ?? "";
-          let parentId = null;
           if (receiver) {
             const typeNode = findTypeInReceiver(receiver, ctx);
             if (typeNode) {
               qName = `${typeNode}.${name}`;
-              for (const n of ctx.nodes) {
-                if (n.name === typeNode && n.kind === "class") {
-                  parentId = n.id;
-                  break;
-                }
-              }
             }
           }
           if (name) {
-            const id = addNode(ctx, name, "method", child, parentId, qName);
+            const id = addNode(ctx, name, "method", child, null, qName);
             ctx.nodes[ctx.nodes.length - 1].language = "go";
             const body = child.childForFieldName("body");
             if (body) extractCalls(body, ctx, id);
@@ -1104,9 +1102,8 @@ function extractSourceFile(node, ctx) {
             const name = nameNode ? ctx.source.slice(nameNode.startIndex, nameNode.endIndex) : null;
             if (!name) continue;
             if (typeChild.type === "struct_type") {
-              const id = addNode(ctx, name, "class", spec, null, name);
+              addNode(ctx, name, "class", spec, null, name);
               ctx.nodes[ctx.nodes.length - 1].language = "go";
-              currentStructId = id;
             } else if (typeChild.type === "interface_type") {
               const id = addNode(ctx, name, "interface", spec, null, name);
               ctx.nodes[ctx.nodes.length - 1].language = "go";
@@ -1114,8 +1111,6 @@ function extractSourceFile(node, ctx) {
           }
           break;
         }
-        case "method_declaration":
-          break;
         default:
           extractSourceFile(child, ctx);
           break;
@@ -1126,20 +1121,11 @@ function extractSourceFile(node, ctx) {
   }
 }
 function findTypeInReceiver(node, ctx) {
-  for (let i = 0; i < node.childCount; i++) {
-    const child = node.child(i);
-    if (!child) continue;
-    if (child.type === "type_identifier") {
-      return ctx.source.slice(child.startIndex, child.endIndex);
-    }
-    if (child.type === "pointer_type") {
-      const inner = child.child(0);
-      if (inner && inner.type === "type_identifier") {
-        return ctx.source.slice(inner.startIndex, inner.endIndex);
-      }
-    }
-  }
-  return null;
+  const parameter = node.namedChildren.find((child) => child?.type === "parameter_declaration");
+  let type = parameter?.childForFieldName("type");
+  if (type?.type === "pointer_type") type = type.namedChild(0);
+  if (type?.type === "generic_type") type = type.childForFieldName("type");
+  return type?.type === "type_identifier" ? ctx.source.slice(type.startIndex, type.endIndex) : null;
 }
 
 // src/engine/extraction/languages/rust.ts
