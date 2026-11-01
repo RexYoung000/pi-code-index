@@ -1,6 +1,6 @@
 {
   "name": "pi-code-indexer",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "AI 驱动的代码知识图谱 — 让 AI 编程助手更快、更准地理解和修改代码",
   "keywords": [
     "pi-package",
@@ -68,6 +68,7 @@
     "dist",
     "skills",
     "README.md",
-    "README.zh-CN.md"
+    "README.zh-CN.md",
+    "CHANGELOG.md"
   ]
 }
