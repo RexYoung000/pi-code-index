@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 是 Pi 1.4 的最低要求；24 是当前主流；26 用于提前发现原生模块 ABI 断裂
+        node-version: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 类型检查、构建与测试
+        run: npm test
+
+      - name: 校验发布包内容
+        run: npm pack --dry-run

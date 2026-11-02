@@ -28,6 +28,12 @@ All data stays local in `.codeindex/codeindex.db`.
 - Java
 - C / C++
 
+## Requirements
+
+- Standalone CLI / generic Agent Skill: Node.js 22 or later.
+- Pi extension: also meet the installed Pi version’s Node.js requirement (Pi 1.4 requires Node.js 22.19 or later).
+- From 0.4.5, the database uses better-sqlite3 13 with bundled Node-API binaries for supported platforms. Node.js 20 is no longer supported.
+
 ## Pi extension quick start
 
 Install or load this Pi package, then initialize the index in your project:

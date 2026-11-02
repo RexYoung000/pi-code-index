@@ -2,6 +2,24 @@
 
 本文件记录 pi-code-indexer 的用户可见变更。0.4.3 之前的版本未单独记录条目。
 
+## [0.4.5] - 2026-11-02
+
+### Fixed
+
+- **Node 26 下代码索引完全不可用**：改用 better-sqlite3 13（Node-API）。旧版 11.x 按 Node
+  ABI 绑定预编译二进制，在 Node 26（ABI 147）上运行时报 `Module did not self-register`，
+  安装时 `prebuild-install` 找不到对应二进制、回退编译又因 v11 用了 Node 26 已移除的 V8 API
+  而失败，导致 `npm i` 直接失败。13.x 在受支持的平台使用随 npm 包分发的预编译二进制，避免安装期额外下载
+  或本地编译。修复来自社区 PR #1（@yzqzy）。
+
+### Changed
+
+- `engines.node` 由 `>=20.0.0` 调整为 `>=22.0.0`。Pi 自身要求 Node >= 22.19.0，原声明与
+  Pi 扩展运行环境不一致；独立 CLI / 通用 Skill 也不再支持 Node 20。lockfile 同步移除
+  35 个旧安装链路依赖。
+- 新增 GitHub Actions CI：在 Node 22 / 24 / 26 上执行安装、构建、14 项测试（含真实数据库
+  索引与搜索）以及打包检查。
+
 ## [0.4.4] - 2026-11-01
 
 ### Fixed
